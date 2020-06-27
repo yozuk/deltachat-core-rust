@@ -35,7 +35,9 @@ mod idle;
 pub mod select_folder;
 mod session;
 
+use anyhow::format_err;
 use client::Client;
+use job::{Status, Thread};
 use session::Session;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -599,7 +601,7 @@ impl Imap {
         let mut uids = Vec::with_capacity(msgs.len());
         let mut new_last_seen_uid = None;
 
-        for (current_uid, msg) in msgs.into_iter() {
+        for (current_uid, msg) in msgs.iter() {
             let (headers, msg_id) = match get_fetch_headers(&msg) {
                 Ok(headers) => {
                     let msg_id = prefetch_get_message_id(&headers).unwrap_or_default();
@@ -614,7 +616,7 @@ impl Imap {
 
             if message_needs_processing(
                 context,
-                current_uid,
+                *current_uid,
                 &headers,
                 &msg_id,
                 folder,
@@ -623,10 +625,10 @@ impl Imap {
             .await
             {
                 // Trigger download and processing for this message.
-                uids.push(current_uid);
+                uids.push(*current_uid);
             } else if read_errors == 0 {
                 // No errors so far, but this was skipped, so mark as last_seen_uid
-                new_last_seen_uid = Some(current_uid);
+                new_last_seen_uid = Some(*current_uid);
             }
         }
 
@@ -634,6 +636,16 @@ impl Imap {
         let (new_last_seen_uid_processed, error_cnt) =
             self.fetch_many_msgs(context, &folder, &uids).await;
         read_errors += error_cnt;
+
+        self.postcheck_imf(
+            context,
+            *current_uid,
+            &headers,
+            &msg_id,
+            folder,
+            show_emails,
+        )
+        .await;
 
         // determine which last_seen_uid to use to update  to
         let new_last_seen_uid_processed = new_last_seen_uid_processed.unwrap_or_default();
@@ -1308,6 +1320,42 @@ impl Imap {
             );
         }
     }
+
+    async fn postcheck_imf(
+        &mut self,
+        context: &Context,
+        server_uid: u32,
+        headers: &[mailparse::MailHeader<'_>],
+        rfc724_mid: &str,
+        server_folder: &str,
+        show_emails: ShowEmails,
+    ) {
+        if let Ok(Some((old_server_folder, old_server_uid, msg_id))) =
+            message::rfc724_mid_exists(context, &rfc724_mid).await
+        {
+            if old_server_folder != server_folder || old_server_uid != server_uid {
+                update_server_uid(context, rfc724_mid, server_folder, server_uid).await;
+                if let Some(job) = job::load_next(
+                    context,
+                    Thread::Imap,
+                    &InterruptInfo::new(false, Some(msg_id)),
+                )
+                .await
+                {
+                    match job.action {
+                        Action::OldDeleteMsgOnImap | Action::DeleteMsgOnImap => {
+                            job.delete_msg_on_imap(context, self).await
+                        }
+                        Action::MarkseenMsgOnImap => job.markseen_msg_on_imap(context, self).await,
+                        Action::MoveMsg => job.move_msg(context, self).await,
+                        _ => {}
+                    };
+                }
+
+                info!(context, "Updating server_uid and possibls");
+            }
+        }
+    }
 }
 
 /// Try to get the folder meaning by the name of the folder only used if the server does not support XLIST.
@@ -1398,14 +1446,6 @@ async fn precheck_imf(
                 old_server_uid,
                 server_uid
             );
-        }
-
-        if old_server_folder != server_folder || old_server_uid != server_uid {
-            update_server_uid(context, rfc724_mid, server_folder, server_uid).await;
-            context
-                .interrupt_inbox(InterruptInfo::new(false, Some(msg_id)))
-                .await;
-            info!(context, "Updating server_uid and interrupting")
         }
         Ok(true)
     } else {

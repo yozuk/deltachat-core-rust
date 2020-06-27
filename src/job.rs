@@ -497,7 +497,7 @@ impl Job {
         .await
     }
 
-    async fn move_msg(&mut self, context: &Context, imap: &mut Imap) -> Status {
+    pub async fn move_msg(&mut self, context: &Context, imap: &mut Imap) -> Status {
         if let Err(err) = imap.connect_configured(context).await {
             warn!(context, "could not connect: {:?}", err);
             return Status::RetryLater;
@@ -537,7 +537,7 @@ impl Job {
     /// This job removes the database record. If there are no more
     /// records pointing to the same message on the server, the job
     /// also removes the message on the server.
-    async fn delete_msg_on_imap(&mut self, context: &Context, imap: &mut Imap) -> Status {
+    pub async fn delete_msg_on_imap(&mut self, context: &Context, imap: &mut Imap) -> Status {
         if let Err(err) = imap.connect_configured(context).await {
             warn!(context, "could not connect: {:?}", err);
             return Status::RetryLater;
@@ -629,7 +629,7 @@ impl Job {
         Status::Finished(Ok(()))
     }
 
-    async fn markseen_msg_on_imap(&mut self, context: &Context, imap: &mut Imap) -> Status {
+    pub async fn markseen_msg_on_imap(&mut self, context: &Context, imap: &mut Imap) -> Status {
         if let Err(err) = imap.connect_configured(context).await {
             warn!(context, "could not connect: {:?}", err);
             return Status::RetryLater;
