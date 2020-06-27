@@ -127,6 +127,12 @@ async fn fetch_idle(ctx: &Context, connection: &mut Imap, folder: Config) -> Int
             }
 
             // fetch
+            println!("dbg: We would fetch here...");
+            println!("dbg: waiting 30s");
+            use std::time::Duration;
+
+            task::sleep(Duration::from_secs(30)).await;
+
             if let Err(err) = connection.fetch(&ctx, &watch_folder).await {
                 connection.trigger_reconnect();
                 warn!(ctx, "{}", err);
@@ -134,14 +140,23 @@ async fn fetch_idle(ctx: &Context, connection: &mut Imap, folder: Config) -> Int
 
             // idle
             if connection.can_idle() {
-                connection
-                    .idle(&ctx, Some(watch_folder))
+                println!("dbg: Start IDLE");
+                let r = connection
+                    .idle(&ctx, Some(watch_folder.clone()))
                     .await
                     .unwrap_or_else(|err| {
                         connection.trigger_reconnect();
                         warn!(ctx, "{}", err);
                         InterruptInfo::new(false, None)
-                    })
+                    });
+                println!("dbg: end IDLE");
+                println!("dbg: ...but now we fetch here");
+                if let Err(err) = connection.fetch(&ctx, &watch_folder).await {
+                    connection.trigger_reconnect();
+                    warn!(ctx, "{}", err);
+                }
+
+                r
             } else {
                 connection.fake_idle(&ctx, Some(watch_folder)).await
             }
