@@ -77,7 +77,6 @@ pub struct Imap {
     connected: bool,
     interrupt: Option<stop_token::StopSource>,
     should_reconnect: bool,
-    login_failed_once: bool,
 }
 
 #[derive(Debug)]
@@ -145,7 +144,7 @@ impl Imap {
             connected: Default::default(),
             interrupt: Default::default(),
             should_reconnect: Default::default(),
-            login_failed_once: Default::default(),
+
         }
     }
 
@@ -240,15 +239,23 @@ impl Imap {
                 // needs to be set here to ensure it is set on reconnects.
                 self.connected = true;
                 self.session = Some(session);
-                self.login_failed_once = false;
                 Ok(())
             }
 
             Err((err, _)) => {
                 let imap_user = self.config.lp.user.to_owned();
-                let message = context
-                    .stock_string_repl_str(StockMessage::CannotLogin, &imap_user)
-                    .await;
+
+                let mut message = err.to_string();
+
+                // See https://tools.ietf.org/html/rfc5530
+                let wrong_pw_codes = ["AUTHENTICATIONFAILED", "AUTHORIZATIONFAILED", "EXPIRED"];
+                if let async_imap::error::Error::No(answer) = &err {
+                    if wrong_pw_codes.iter().any(|code| answer.contains(code)) {
+                        message = context
+                            .stock_string_repl_str(StockMessage::CannotLogin, &imap_user)
+                            .await;
+                    }
+                }
 
                 warn!(context, "{} ({})", message, err);
 
@@ -269,8 +276,6 @@ impl Imap {
                     {
                         warn!(context, "{}", e);
                     }
-                } else {
-                    self.login_failed_once = true;
                 }
 
                 self.trigger_reconnect();
@@ -324,6 +329,7 @@ impl Imap {
     /// Emits network error if connection fails.
     pub async fn connect_configured(&mut self, context: &Context) -> Result<()> {
         if self.is_connected() && !self.should_reconnect() {
+            info!(context, "already configured");
             return Ok(());
         }
         if !context.is_configured().await {

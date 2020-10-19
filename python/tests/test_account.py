@@ -8,6 +8,7 @@ from deltachat import const, Account
 from deltachat.message import Message
 from deltachat.hookspec import account_hookimpl
 from datetime import datetime, timedelta
+import time
 
 
 @pytest.mark.parametrize("msgtext,res", [
@@ -1852,6 +1853,22 @@ class TestOnlineAccount:
         assert ev.data2.count("connect") == 1
         # The users do not know what "configuration" is
         assert "configuration" not in ev.data2.lower()
+
+    def test_wrong_pw(self, acfactory):
+        """If the password changes on the server and we can't login, the user
+        should be notified. Of course we can't change the server password here
+        but we can simulate this by changing the password in the database."""
+        ac1 = acfactory.get_one_online_account()
+        ac1._set_config_raw(b"configured_mail_pw", b"invalid")
+
+        ac1.stop_io()
+        ac1.start_io()
+        ac1.stop_io()
+        ac1.start_io()
+        ac1.stop_io()
+        ac1.start_io()
+
+        wrong_pw_warning = ac1._evtracker.wait_next_incoming_message()
 
     def test_name_changes(self, acfactory):
         ac1, ac2 = acfactory.get_two_online_accounts()

@@ -116,6 +116,9 @@ class Account(object):
             value = value.encode("utf8")
         else:
             value = ffi.NULL
+        self._set_config_raw(name, value)
+
+    def _set_config_raw(self, name, value):
         lib.dc_set_config(self._dc_context, name, value)
 
     def get_config(self, name):

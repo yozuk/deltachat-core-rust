@@ -128,6 +128,7 @@ async fn fetch(ctx: &Context, connection: &mut Imap) {
 async fn fetch_idle(ctx: &Context, connection: &mut Imap, folder: Config) -> InterruptInfo {
     match ctx.get_config(folder).await {
         Some(watch_folder) => {
+            info!(ctx, "fetch_idle on {}", watch_folder);
             // connect and fake idle if unable to connect
             if let Err(err) = connection.connect_configured(&ctx).await {
                 warn!(ctx, "imap connection failed: {}", err);
