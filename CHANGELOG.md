@@ -18,6 +18,7 @@
 - mailing list: remove square-brackets only for first name #3452
 - do not use footers from mailinglists as the contact status #3460
 - don't ignore KML parsing errors #3473
+- enable `auto_vacuum` on all SQL connections #2955
 
 
 ## 1.87.0
