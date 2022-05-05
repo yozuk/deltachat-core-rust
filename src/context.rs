@@ -542,6 +542,11 @@ impl Context {
                 .to_string(),
         );
 
+        res.insert(
+            "debug_logging",
+            self.get_config_int(Config::DebugLogging).await?.to_string(),
+        );
+
         let elapsed = self.creation_time.elapsed();
         res.insert("uptime", duration_to_str(elapsed.unwrap_or_default()));
 
