@@ -579,6 +579,12 @@ impl Sql {
             .map(|s| s.and_then(|s| s.parse().ok()))
     }
 
+    pub async fn get_raw_config_u32(&self, key: impl AsRef<str>) -> Result<Option<u32>> {
+        self.get_raw_config(key)
+            .await
+            .map(|s| s.and_then(|s| s.parse().ok()))
+    }
+
     pub async fn get_raw_config_bool(&self, key: impl AsRef<str>) -> Result<bool> {
         // Not the most obvious way to encode bool as string, but it is matter
         // of backward compatibility.
