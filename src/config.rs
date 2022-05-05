@@ -2,12 +2,12 @@
 
 use anyhow::{ensure, Context as _, Result};
 
-
 use strum::{EnumProperty, IntoEnumIterator};
 use strum_macros::{AsRefStr, Display, EnumIter, EnumProperty, EnumString};
 
 use crate::blob::BlobObject;
 
+use crate::chat;
 use crate::constants::DC_VERSION_STR;
 use crate::contact::addr_cmp;
 use crate::context::Context;
@@ -16,7 +16,6 @@ use crate::events::EventType;
 use crate::message::{self, Message, MsgId, Viewtype};
 use crate::mimefactory::RECOMMENDED_FILE_SIZE;
 use crate::provider::{get_provider_by_id, Provider};
-use crate::{chat};
 
 /// The available configuration keys.
 #[derive(
