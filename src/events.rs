@@ -131,7 +131,7 @@ impl EventType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumProperty)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumProperty, Display)]
 pub enum EventType {
     /// The library-user may write an informational string to the log.
     ///
@@ -347,7 +347,7 @@ impl EventType {
     pub fn to_json(&self, timestamp: Option<i64>) -> Value {
         let mut tree: serde_json::Map<String, Value> = serde_json::Map::new();
 
-        tree.insert("event_type".to_string(), Value::Number(self.as_id().into()));
+        tree.insert("event_type".to_string(), Value::String(self.to_string()));
 
         let (data1, data2) = match &self {
             EventType::Info(data1)
