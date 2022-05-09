@@ -1,6 +1,7 @@
 //! # Messages and their identifiers.
 
 use std::collections::BTreeSet;
+use std::sync::atomic;
 
 use anyhow::{ensure, format_err, Context as _, Result};
 use async_std::path::{Path, PathBuf};
@@ -1256,6 +1257,7 @@ pub async fn delete_msgs(context: &Context, msg_ids: &[MsgId]) -> Result<()> {
                 .sql
                 .set_raw_config(Config::DebugLogging, Some("0"))
                 .await?;
+            context.debug_logging.store(0, atomic::Ordering::Release);
         }
     }
 

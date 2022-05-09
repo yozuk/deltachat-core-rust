@@ -3,6 +3,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::ffi::OsString;
 use std::ops::Deref;
+use std::sync::atomic::{self, AtomicU32};
 use std::time::{Instant, SystemTime};
 
 use anyhow::{bail, ensure, Result};
@@ -75,6 +76,8 @@ pub struct InnerContext {
     /// If the ui wants to display an error after a failure,
     /// `last_error` should be used to avoid races with the event thread.
     pub(crate) last_error: RwLock<String>,
+
+    pub(crate) debug_logging: AtomicU32,
 }
 
 #[derive(Debug)]
@@ -179,6 +182,7 @@ impl Context {
             creation_time: std::time::SystemTime::now(),
             last_full_folder_scan: Mutex::new(None),
             last_error: RwLock::new("".to_string()),
+            debug_logging: AtomicU32::default(),
         };
 
         let ctx = Context {
@@ -243,47 +247,44 @@ impl Context {
             id: self.id,
             typ: event.clone(),
         });
+
         let context = self.clone();
-        async_std::task::spawn(async move {
-            // TODO synchronously is prob. better
-            match context.get_config_int(Config::DebugLogging).await {
-                Err(_) => {} // Probably the database is simply closed (i.e. encrypted and no passphrase available yet)
-                Ok(0) => {}
-                Ok(debug_logging_webxdc) => {
-                    let time = SystemTime::now()
-                        .duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_millis() as i64;
+        let debug_logging = context.debug_logging.load(atomic::Ordering::Acquire);
+        if debug_logging > 0 {
+            let time = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as i64;
 
-                    let webxdc_instance_id = MsgId::new(debug_logging_webxdc as u32);
+            async_std::task::block_on(async move {
+                let webxdc_instance_id = MsgId::new(debug_logging as u32);
 
-                    match context
-                        .internal_write_status_update(
-                            &webxdc_instance_id,
-                            StatusUpdateItem {
-                                payload: event.to_json(Some(time)),
-                                info: None,
-                                summary: None,
+                match context
+                    .internal_write_status_update(
+                        &webxdc_instance_id,
+                        StatusUpdateItem {
+                            payload: event.to_json(Some(time)),
+                            info: None,
+                            summary: None,
+                        },
+                    )
+                    .await
+                {
+                    Err(err) => {
+                        eprintln!("Can't log event to webxdc status update: {:#}", err);
+                    }
+                    Ok(serial) => {
+                        context.events.emit(Event {
+                            id: context.id,
+                            typ: EventType::WebxdcStatusUpdate {
+                                msg_id: webxdc_instance_id,
+                                status_update_serial: serial,
                             },
-                        )
-                        .await
-                    {
-                        Err(err) => {
-                            eprintln!("Can't log event to webxdc status update: {:#}", err);
-                        }
-                        Ok(serial) => {
-                            context.events.emit(Event {
-                                id: context.id,
-                                typ: EventType::WebxdcStatusUpdate {
-                                    msg_id: webxdc_instance_id,
-                                    status_update_serial: serial,
-                                },
-                            });
-                        }
+                        });
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     /// Emits a generic MsgsChanged event (without chat or message id)

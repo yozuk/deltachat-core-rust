@@ -5,6 +5,7 @@ use async_std::sync::RwLock;
 
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
+use std::sync::atomic;
 use std::time::Duration;
 
 use anyhow::{bail, Context as _, Result};
@@ -326,6 +327,12 @@ impl Sql {
         } else {
             info!(context, "Opened database {:?}.", self.dbfile);
             *self.is_encrypted.write().await = Some(passphrase_nonempty);
+
+            let debug_logging = self.get_raw_config_u32(Config::DebugLogging).await?;
+            context
+                .debug_logging
+                .store(debug_logging.unwrap_or(0), atomic::Ordering::Release);
+
             Ok(())
         }
     }
