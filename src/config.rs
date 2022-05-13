@@ -186,7 +186,9 @@ pub enum Config {
     #[strum(props(default = "0"))]
     SendSyncMsgs,
 
-    // TODO docs, deltachat.h
+    /// Let the core save all events to the database. You should expose this as an advanced
+    /// setting to the user. When they enable it, the core automatically adds a webxdc
+    /// message to the device chat where the user can see the log messages.
     #[strum(props(default = "0"))]
     DebugLogging,
 }

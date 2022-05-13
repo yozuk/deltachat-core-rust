@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### API-Changes
+- add `debug_logging` setting #3296
+
 ### Changes
 - send normal messages with higher priority than MDNs #3243
 - make Scheduler stateless #3302
