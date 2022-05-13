@@ -469,42 +469,8 @@ pub unsafe extern "C" fn dc_event_get_data1_int(event: *mut dc_event_t) -> libc:
     }
 
     let event = &(*event).typ;
-    match event {
-        EventType::Info(_)
-        | EventType::SmtpConnected(_)
-        | EventType::ImapConnected(_)
-        | EventType::SmtpMessageSent(_)
-        | EventType::ImapMessageDeleted(_)
-        | EventType::ImapMessageMoved(_)
-        | EventType::NewBlobFile(_)
-        | EventType::DeletedBlobFile(_)
-        | EventType::Warning(_)
-        | EventType::Error(_)
-        | EventType::ConnectivityChanged
-        | EventType::SelfavatarChanged
-        | EventType::ErrorSelfNotInGroup(_) => 0,
-        EventType::MsgsChanged { chat_id, .. }
-        | EventType::IncomingMsg { chat_id, .. }
-        | EventType::MsgsNoticed(chat_id)
-        | EventType::MsgDelivered { chat_id, .. }
-        | EventType::MsgFailed { chat_id, .. }
-        | EventType::MsgRead { chat_id, .. }
-        | EventType::ChatModified(chat_id)
-        | EventType::ChatEphemeralTimerModified { chat_id, .. } => chat_id.to_u32() as libc::c_int,
-        EventType::ContactsChanged(id) | EventType::LocationChanged(id) => {
-            let id = id.unwrap_or_default();
-            id.to_u32() as libc::c_int
-        }
-        EventType::ConfigureProgress { progress, .. } | EventType::ImexProgress(progress) => {
-            *progress as libc::c_int
-        }
-        EventType::ImexFileWritten(_) => 0,
-        EventType::SecurejoinInviterProgress { contact_id, .. }
-        | EventType::SecurejoinJoinerProgress { contact_id, .. } => {
-            contact_id.to_u32() as libc::c_int
-        }
-        EventType::WebxdcStatusUpdate { msg_id, .. } => msg_id.to_u32() as libc::c_int,
-    }
+
+    event.get_data1_int() as libc::c_int
 }
 
 #[no_mangle]
@@ -516,39 +482,10 @@ pub unsafe extern "C" fn dc_event_get_data2_int(event: *mut dc_event_t) -> libc:
 
     let event = &(*event).typ;
 
-    match event {
-        EventType::Info(_)
-        | EventType::SmtpConnected(_)
-        | EventType::ImapConnected(_)
-        | EventType::SmtpMessageSent(_)
-        | EventType::ImapMessageDeleted(_)
-        | EventType::ImapMessageMoved(_)
-        | EventType::NewBlobFile(_)
-        | EventType::DeletedBlobFile(_)
-        | EventType::Warning(_)
-        | EventType::Error(_)
-        | EventType::ErrorSelfNotInGroup(_)
-        | EventType::ContactsChanged(_)
-        | EventType::LocationChanged(_)
-        | EventType::ConfigureProgress { .. }
-        | EventType::ImexProgress(_)
-        | EventType::ImexFileWritten(_)
-        | EventType::MsgsNoticed(_)
-        | EventType::ConnectivityChanged
-        | EventType::SelfavatarChanged => 0,
-        EventType::ChatModified(_) => 0,
-        EventType::MsgsChanged { msg_id, .. }
-        | EventType::IncomingMsg { msg_id, .. }
-        | EventType::MsgDelivered { msg_id, .. }
-        | EventType::MsgFailed { msg_id, .. }
-        | EventType::MsgRead { msg_id, .. } => msg_id.to_u32() as libc::c_int,
-        EventType::SecurejoinInviterProgress { progress, .. }
-        | EventType::SecurejoinJoinerProgress { progress, .. } => *progress as libc::c_int,
-        EventType::ChatEphemeralTimerModified { timer, .. } => timer.to_u32() as libc::c_int,
-        EventType::WebxdcStatusUpdate {
-            status_update_serial,
-            ..
-        } => status_update_serial.to_u32() as libc::c_int,
+    if let Some(data2) = event.get_data2_int() {
+        data2 as libc::c_int
+    } else {
+        0
     }
 }
 
@@ -562,46 +499,18 @@ pub unsafe extern "C" fn dc_event_get_data2_str(event: *mut dc_event_t) -> *mut 
     let event = &(*event).typ;
 
     match event {
-        EventType::Info(msg)
-        | EventType::SmtpConnected(msg)
-        | EventType::ImapConnected(msg)
-        | EventType::SmtpMessageSent(msg)
-        | EventType::ImapMessageDeleted(msg)
-        | EventType::ImapMessageMoved(msg)
-        | EventType::NewBlobFile(msg)
-        | EventType::DeletedBlobFile(msg)
-        | EventType::Warning(msg)
-        | EventType::Error(msg)
-        | EventType::ErrorSelfNotInGroup(msg) => {
-            let data2 = msg.to_c_string().unwrap_or_default();
+        EventType::ImexFileWritten(file) => {
+            // Directly convert the PathBuf file to a CString, since both can contain invalid
+            // UTF-8, but a Rust `String` can't
+            let data2 = file.to_c_string().unwrap_or_default();
             data2.into_raw()
         }
-        EventType::MsgsChanged { .. }
-        | EventType::IncomingMsg { .. }
-        | EventType::MsgsNoticed(_)
-        | EventType::MsgDelivered { .. }
-        | EventType::MsgFailed { .. }
-        | EventType::MsgRead { .. }
-        | EventType::ChatModified(_)
-        | EventType::ContactsChanged(_)
-        | EventType::LocationChanged(_)
-        | EventType::ImexProgress(_)
-        | EventType::SecurejoinInviterProgress { .. }
-        | EventType::SecurejoinJoinerProgress { .. }
-        | EventType::ConnectivityChanged
-        | EventType::SelfavatarChanged
-        | EventType::WebxdcStatusUpdate { .. }
-        | EventType::ChatEphemeralTimerModified { .. } => ptr::null_mut(),
-        EventType::ConfigureProgress { comment, .. } => {
-            if let Some(comment) = comment {
-                comment.to_c_string().unwrap_or_default().into_raw()
+        _ => {
+            if let Some(data2) = event.get_data2_str() {
+                data2.to_c_string().unwrap_or_default().into_raw()
             } else {
                 ptr::null_mut()
             }
-        }
-        EventType::ImexFileWritten(file) => {
-            let data2 = file.to_c_string().unwrap_or_default();
-            data2.into_raw()
         }
     }
 }
