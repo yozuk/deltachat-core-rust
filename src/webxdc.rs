@@ -266,11 +266,6 @@ impl Context {
             self.emit_msgs_changed(instance.chat_id, instance.id);
         }
 
-        let rowid = self.sql.insert(
-            "INSERT INTO msgs_status_updates (msg_id, update_item) VALUES(?, ?);",
-            paramsv![instance.id, serde_json::to_string(&status_update_item)?],
-        ).await?;
-        
         let status_update_serial = self
             .internal_write_status_update(&instance.id, status_update_item)
             .await?;
