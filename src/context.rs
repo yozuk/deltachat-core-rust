@@ -273,6 +273,7 @@ impl Context {
                             payload: event.to_json(Some(time)),
                             info: None,
                             summary: None,
+                            document: None,
                         },
                     )
                     .await
