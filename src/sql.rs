@@ -338,24 +338,16 @@ impl Sql {
     }
 
     /// Execute the given query, returning the number of affected rows.
-    pub async fn execute(
-        &self,
-        query: impl AsRef<str>,
-        params: impl rusqlite::Params,
-    ) -> Result<usize> {
+    pub async fn execute(&self, query: &str, params: impl rusqlite::Params) -> Result<usize> {
         let conn = self.get_conn().await?;
-        let res = conn.execute(query.as_ref(), params)?;
+        let res = conn.execute(query, params)?;
         Ok(res)
     }
 
     /// Executes the given query, returning the last inserted row ID.
-    pub async fn insert(
-        &self,
-        query: impl AsRef<str>,
-        params: impl rusqlite::Params,
-    ) -> Result<i64> {
+    pub async fn insert(&self, query: &str, params: impl rusqlite::Params) -> Result<i64> {
         let conn = self.get_conn().await?;
-        conn.execute(query.as_ref(), params)?;
+        conn.execute(query, params)?;
         Ok(conn.last_insert_rowid())
     }
 
@@ -364,7 +356,7 @@ impl Sql {
     /// result of that function.
     pub async fn query_map<T, F, G, H>(
         &self,
-        sql: impl AsRef<str>,
+        sql: &str,
         params: impl rusqlite::Params,
         f: F,
         mut g: G,
@@ -373,8 +365,6 @@ impl Sql {
         F: FnMut(&rusqlite::Row) -> rusqlite::Result<T>,
         G: FnMut(rusqlite::MappedRows<F>) -> Result<H>,
     {
-        let sql = sql.as_ref();
-
         let conn = self.get_conn().await?;
         let mut stmt = conn.prepare(sql)?;
         let res = stmt.query_map(params, f)?;
@@ -392,11 +382,7 @@ impl Sql {
     }
 
     /// Used for executing `SELECT COUNT` statements only. Returns the resulting count.
-    pub async fn count(
-        &self,
-        query: impl AsRef<str>,
-        params: impl rusqlite::Params,
-    ) -> anyhow::Result<usize> {
+    pub async fn count(&self, query: &str, params: impl rusqlite::Params) -> anyhow::Result<usize> {
         let count: isize = self.query_row(query, params, |row| row.get(0)).await?;
         Ok(usize::try_from(count)?)
     }
@@ -411,7 +397,7 @@ impl Sql {
     /// Execute a query which is expected to return one row.
     pub async fn query_row<T, F>(
         &self,
-        query: impl AsRef<str>,
+        query: &str,
         params: impl rusqlite::Params,
         f: F,
     ) -> Result<T>
@@ -419,7 +405,7 @@ impl Sql {
         F: FnOnce(&rusqlite::Row) -> rusqlite::Result<T>,
     {
         let conn = self.get_conn().await?;
-        let res = conn.query_row(query.as_ref(), params, f)?;
+        let res = conn.query_row(query, params, f)?;
         Ok(res)
     }
 
@@ -481,7 +467,7 @@ impl Sql {
     /// Execute a query which is expected to return zero or one row.
     pub async fn query_row_optional<T, F>(
         &self,
-        sql: impl AsRef<str>,
+        sql: &str,
         params: impl rusqlite::Params,
         f: F,
     ) -> anyhow::Result<Option<T>>
@@ -729,13 +715,15 @@ pub async fn remove_unused_files(context: &Context) -> Result<()> {
         Ok(mut dir_handle) => {
             /* avoid deletion of files that are just created to build a message object */
             let diff = std::time::Duration::from_secs(60 * 60);
-            let keep_files_newer_than = std::time::SystemTime::now().checked_sub(diff).unwrap();
+            let keep_files_newer_than = std::time::SystemTime::now()
+                .checked_sub(diff)
+                .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
 
             while let Some(entry) = dir_handle.next().await {
-                if entry.is_err() {
-                    break;
-                }
-                let entry = entry.unwrap();
+                let entry = match entry {
+                    Ok(entry) => entry,
+                    Err(_) => break,
+                };
                 let name_f = entry.file_name();
                 let name_s = name_f.to_string_lossy();
 
@@ -751,11 +739,13 @@ pub async fn remove_unused_files(context: &Context) -> Result<()> {
 
                 if let Ok(stats) = async_std::fs::metadata(entry.path()).await {
                     let recently_created =
-                        stats.created().is_ok() && stats.created().unwrap() > keep_files_newer_than;
-                    let recently_modified = stats.modified().is_ok()
-                        && stats.modified().unwrap() > keep_files_newer_than;
-                    let recently_accessed = stats.accessed().is_ok()
-                        && stats.accessed().unwrap() > keep_files_newer_than;
+                        stats.created().map_or(false, |t| t > keep_files_newer_than);
+                    let recently_modified = stats
+                        .modified()
+                        .map_or(false, |t| t > keep_files_newer_than);
+                    let recently_accessed = stats
+                        .accessed()
+                        .map_or(false, |t| t > keep_files_newer_than);
 
                     if recently_created || recently_modified || recently_accessed {
                         info!(

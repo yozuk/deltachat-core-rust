@@ -786,7 +786,7 @@ impl ChatId {
         );
         let row = sql
             .query_row_optional(
-                query,
+                &query,
                 paramsv![
                     self,
                     MessageState::OutPreparing,
@@ -895,7 +895,7 @@ impl ChatId {
             ret += &ret_mutual;
         }
 
-        Ok(ret)
+        Ok(ret.trim().to_string())
     }
 
     /// Bad evil escape hatch.
@@ -3061,7 +3061,7 @@ pub async fn forward_msgs(context: &Context, msg_ids: &[MsgId], chat_id: ChatId)
         let ids = context
             .sql
             .query_map(
-                format!(
+                &format!(
                     "SELECT id FROM msgs WHERE id IN({}) ORDER BY timestamp,id",
                     sql::repeat_vars(msg_ids.len())
                 ),
@@ -4905,6 +4905,22 @@ mod tests {
         Ok(())
     }
 
+    #[async_std::test]
+    async fn test_chat_get_color() -> Result<()> {
+        let t = TestContext::new().await;
+        let chat_id = create_group_chat(&t, ProtectionStatus::Unprotected, "a chat").await?;
+        let color1 = Chat::load_from_db(&t, chat_id).await?.get_color(&t).await?;
+        assert_eq!(color1, 0x008772);
+
+        // upper-/lowercase makes a difference for the colors, these are different groups
+        // (in contrast to email addresses, where upper-/lowercase is ignored in practise)
+        let t = TestContext::new().await;
+        let chat_id = create_group_chat(&t, ProtectionStatus::Unprotected, "A CHAT").await?;
+        let color2 = Chat::load_from_db(&t, chat_id).await?.get_color(&t).await?;
+        assert_ne!(color2, color1);
+        Ok(())
+    }
+
     async fn test_sticker(filename: &str, bytes: &[u8], w: i32, h: i32) -> Result<()> {
         let alice = TestContext::new_alice().await;
         let bob = TestContext::new_bob().await;
@@ -5413,7 +5429,7 @@ mod tests {
         assert_eq!(
             chat_id.get_encryption_info(&alice).await?,
             "No encryption:\n\
-            bob@example.net\n"
+            bob@example.net"
         );
 
         add_contact_to_chat(&alice, chat_id, contact_fiona).await?;
@@ -5421,7 +5437,7 @@ mod tests {
             chat_id.get_encryption_info(&alice).await?,
             "No encryption:\n\
             bob@example.net\n\
-            fiona@example.net\n"
+            fiona@example.net"
         );
 
         let direct_chat = bob.create_chat(&alice).await;
@@ -5434,7 +5450,7 @@ mod tests {
             fiona@example.net\n\
             \n\
             End-to-end encryption preferred:\n\
-            bob@example.net\n"
+            bob@example.net"
         );
 
         bob.set_config(Config::E2eeEnabled, Some("0")).await?;
@@ -5447,7 +5463,7 @@ mod tests {
             fiona@example.net\n\
             \n\
             End-to-end encryption available:\n\
-            bob@example.net\n"
+            bob@example.net"
         );
 
         Ok(())

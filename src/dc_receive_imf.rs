@@ -1441,7 +1441,9 @@ async fn create_or_lookup_group(
             return Ok(None);
         }
 
-        let grpname = mime_parser.get_header(HeaderDef::ChatGroupName).unwrap();
+        let grpname = mime_parser
+            .get_header(HeaderDef::ChatGroupName)
+            .context("Chat-Group-Name vanished")?;
         let new_chat_id = ChatId::create_multiuser_record(
             context,
             Chattype::Group,
@@ -2008,7 +2010,7 @@ async fn check_verified_properties(
     let rows = context
         .sql
         .query_map(
-            format!(
+            &format!(
                 "SELECT c.addr, LENGTH(ps.verified_key_fingerprint)  FROM contacts c  \
              LEFT JOIN acpeerstates ps ON c.addr=ps.addr  WHERE c.id IN({}) ",
                 sql::repeat_vars(to_ids.len())
