@@ -267,7 +267,7 @@ impl Context {
         }
 
         let status_update_serial = self
-            .internal_write_status_update(&instance.id, status_update_item)
+            .write_status_update_inner(&instance.id, status_update_item)
             .await?;
 
         self.emit_event(EventType::WebxdcStatusUpdate {
@@ -278,7 +278,7 @@ impl Context {
         Ok(status_update_serial)
     }
 
-    pub(crate) async fn internal_write_status_update(
+    pub(crate) async fn write_status_update_inner(
         &self,
         instance_id: &MsgId,
         status_update_item: StatusUpdateItem,
