@@ -81,6 +81,27 @@ impl Context {
     }
 }
 
+async fn download_msgs(context: &Context, imap: &mut Imap) -> Result<()> {
+    let msg_ids = context
+        .sql
+        .query_map(
+            "SELECT msg_id FROM download",
+            paramsv![],
+            |row| {
+                let msg_id: MsgId = row.get(0)?;
+                Ok(msg_id)
+            },
+            |rowids| {
+                rowids
+                    .collect::<std::result::Result<Vec<_>, _>>()
+                    .map_err(Into::into)
+            },
+        )
+        .await?;
+
+    Ok(())
+}
+
 async fn inbox_loop(ctx: Context, started: Sender<()>, inbox_handlers: ImapConnectionHandlers) {
     use futures::future::FutureExt;
 
@@ -141,6 +162,8 @@ async fn inbox_loop(ctx: Context, started: Sender<()>, inbox_handlers: ImapConne
                             warn!(ctx, "Can't get Config::FetchedExistingMsgs: {:#}", err);
                         }
                     }
+
+                    download_msgs(&ctx, &mut connection).await;
 
                     info = fetch_idle(&ctx, &mut connection, Config::ConfiguredInboxFolder).await;
                 }
