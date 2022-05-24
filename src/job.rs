@@ -58,12 +58,6 @@ pub enum Action {
     // this is user initiated so it should have a fairly high priority
     UpdateRecentQuota = 140,
 
-    // This job will download partially downloaded messages completely
-    // and is added when download_full() is called.
-    // Most messages are downloaded automatically on fetch
-    // and do not go through this job.
-    DownloadMsg = 250,
-
     // UID synchronization is high-priority to make sure correct UIDs
     // are used by message moving/deletion.
     ResyncFolders = 300,
@@ -73,7 +67,6 @@ pub enum Action {
 pub struct Job {
     pub job_id: u32,
     pub action: Action,
-    pub foreign_id: u32,
     pub desired_timestamp: i64,
     pub added_timestamp: i64,
     pub tries: u32,
@@ -87,13 +80,12 @@ impl fmt::Display for Job {
 }
 
 impl Job {
-    pub fn new(action: Action, foreign_id: u32, param: Params, delay_seconds: i64) -> Self {
+    pub fn new(action: Action, param: Params, delay_seconds: i64) -> Self {
         let timestamp = time();
 
         Self {
             job_id: 0,
             action,
-            foreign_id,
             desired_timestamp: timestamp + delay_seconds,
             added_timestamp: timestamp,
             tries: 0,
@@ -138,11 +130,10 @@ impl Job {
                 .await?;
         } else {
             context.sql.execute(
-                "INSERT INTO jobs (added_timestamp, action, foreign_id, param, desired_timestamp) VALUES (?,?,?,?,?);",
+                "INSERT INTO jobs (added_timestamp, action, foreign_id, param, desired_timestamp) VALUES (?,?,0,?,?);",
                 paramsv![
                     self.added_timestamp,
                     self.action,
-                    self.foreign_id,
                     self.param.to_string(),
                     self.desired_timestamp
                 ]
@@ -286,7 +277,6 @@ async fn perform_job_action(
             Ok(status) => status,
             Err(err) => Status::Finished(Err(err)),
         },
-        Action::DownloadMsg => job.download_msg(context, connection.inbox()).await,
     };
 
     info!(context, "Finished immediate try {} of job {}", tries, job);
@@ -316,11 +306,7 @@ fn get_backoff_time_offset(tries: u32, action: Action) -> i64 {
 
 pub(crate) async fn schedule_resync(context: &Context) -> Result<()> {
     kill_action(context, Action::ResyncFolders).await?;
-    add(
-        context,
-        Job::new(Action::ResyncFolders, 0, Params::new(), 0),
-    )
-    .await?;
+    add(context, Job::new(Action::ResyncFolders, Params::new(), 0)).await?;
     Ok(())
 }
 
@@ -332,7 +318,7 @@ pub async fn add(context: &Context, job: Job) -> Result<()> {
 
     if delay_seconds == 0 {
         match action {
-            Action::ResyncFolders | Action::UpdateRecentQuota | Action::DownloadMsg => {
+            Action::ResyncFolders | Action::UpdateRecentQuota => {
                 info!(context, "interrupt: imap");
                 context.interrupt_inbox(InterruptInfo::new(false)).await;
             }
@@ -357,7 +343,7 @@ pub(crate) async fn load_next(context: &Context, info: &InterruptInfo) -> Result
         // processing for first-try and after backoff-timeouts:
         // process jobs in the order they were added.
         query = r#"
-SELECT id, action, foreign_id, param, added_timestamp, desired_timestamp, tries
+SELECT id, action, param, added_timestamp, desired_timestamp, tries
 FROM jobs
 WHERE desired_timestamp<=?
 ORDER BY action DESC, added_timestamp
@@ -369,7 +355,7 @@ LIMIT 1;
         // process _all_ pending jobs that failed before
         // in the order of their backoff-times.
         query = r#"
-SELECT id, action, foreign_id, param, added_timestamp, desired_timestamp, tries
+SELECT id, action, param, added_timestamp, desired_timestamp, tries
 FROM jobs
 WHERE tries>0
 ORDER BY desired_timestamp, action DESC
@@ -385,7 +371,6 @@ LIMIT 1;
                 let job = Job {
                     job_id: row.get("id")?,
                     action: row.get("action")?,
-                    foreign_id: row.get("foreign_id")?,
                     desired_timestamp: row.get("desired_timestamp")?,
                     added_timestamp: row.get("added_timestamp")?,
                     tries: row.get("tries")?,
@@ -424,22 +409,21 @@ mod tests {
 
     use crate::test_utils::TestContext;
 
-    async fn insert_job(context: &Context, foreign_id: i64, valid: bool) {
+    async fn insert_job(context: &Context, valid: bool) {
         let now = time();
         context
             .sql
             .execute(
                 "INSERT INTO jobs
                    (added_timestamp, action, foreign_id, param, desired_timestamp)
-                 VALUES (?, ?, ?, ?, ?);",
+                 VALUES (?, ?, 0, ?, ?);",
                 paramsv![
                     now,
                     if valid {
-                        Action::DownloadMsg as i32
+                        Action::ResyncFolders as i32
                     } else {
                         -1
                     },
-                    foreign_id,
                     Params::new().to_string(),
                     now
                 ],
@@ -454,11 +438,11 @@ mod tests {
         // fails to load from the database instead of failing to load
         // all jobs.
         let t = TestContext::new().await;
-        insert_job(&t, 1, false).await; // This can not be loaded into Job struct.
+        insert_job(&t, false).await; // This can not be loaded into Job struct.
         let jobs = load_next(&t, &InterruptInfo::new(false)).await?;
         assert!(jobs.is_none());
 
-        insert_job(&t, 1, true).await;
+        insert_job(&t, true).await;
         let jobs = load_next(&t, &InterruptInfo::new(false)).await?;
         assert!(jobs.is_some());
         Ok(())
@@ -468,7 +452,7 @@ mod tests {
     async fn test_load_next_job_one() -> Result<()> {
         let t = TestContext::new().await;
 
-        insert_job(&t, 1, true).await;
+        insert_job(&t, true).await;
 
         let jobs = load_next(&t, &InterruptInfo::new(false)).await?;
         assert!(jobs.is_some());

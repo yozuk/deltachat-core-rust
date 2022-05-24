@@ -112,7 +112,7 @@ impl Context {
         if !job::action_exists(self, Action::UpdateRecentQuota).await? {
             job::add(
                 self,
-                job::Job::new(Action::UpdateRecentQuota, 0, Params::new(), 0),
+                job::Job::new(Action::UpdateRecentQuota, Params::new(), 0),
             )
             .await?;
         }
