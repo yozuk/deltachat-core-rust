@@ -21,6 +21,7 @@
 
 ### Fixes
 - improved error handling for account setup from qrcode #3474
+- python: enable certificate checks in cloned accounts #3443
 
 ## 1.92.0
 
