@@ -25,21 +25,6 @@ pub enum Status {
     RetryLater,
 }
 
-#[macro_export]
-macro_rules! job_try {
-    ($expr:expr) => {
-        match $expr {
-            std::result::Result::Ok(val) => val,
-            std::result::Result::Err(err) => {
-                return $crate::job::Status::Finished(Err(err.into()));
-            }
-        }
-    };
-    ($expr:expr,) => {
-        $crate::job_try!($expr)
-    };
-}
-
 #[derive(
     Debug,
     Display,
