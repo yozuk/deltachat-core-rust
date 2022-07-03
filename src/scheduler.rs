@@ -11,10 +11,10 @@ use crate::imap::Imap;
 use crate::job;
 use crate::location;
 use crate::log::LogExt;
+use crate::message::MsgId;
 use crate::smtp::{send_smtp_messages, Smtp};
 use crate::sql;
-use crate::tools::time;
-use crate::tools::{duration_to_str, maybe_add_time_based_warnings};
+use crate::tools::{duration_to_str, maybe_add_time_based_warnings, time};
 
 use self::connectivity::ConnectivityStore;
 
