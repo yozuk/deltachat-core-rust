@@ -12,6 +12,7 @@
 - configure DeltaChat folder by selecting it, so it is configured even if not LISTed #3371
 - build PyPy wheels #6683
 - improve default error if NDN does not provide an error #3456
+- truncate incoming messages by lines instead of just length #3480
 
 ### Fixes
 - mailing list: remove square-brackets only for first name #3452
