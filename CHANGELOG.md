@@ -4,6 +4,7 @@
 
 ### Changes
 - refactorings #3437
+- add `internet_access` flag to `dc_msg_get_webxdc_info()` #3516
 
 ### Fixes
 
