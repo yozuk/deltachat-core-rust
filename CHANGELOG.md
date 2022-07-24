@@ -12,6 +12,7 @@
 - node: json rpc methods #3463:
  - `AccountManager.prototype.startJsonRpcHandler(callback: ((response: string) => void)): void`
  - `AccountManager.prototype.jsonRpcRequest(message: string): void`
+- add separate stock strings for actions done by contacts to make them easier to translate #3518
 
 ### Added
 - added a JSON RPC API, accessible through a WebSocket server, the CFFI bindings and the Node.js bindings #3463

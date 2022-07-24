@@ -5956,35 +5956,6 @@ void dc_event_unref(dc_event_t* event);
 /// Used in summaries.
 #define DC_STR_FILE                       12
 
-/// "Group name changed from %1$s to %2$s."
-///
-/// Used in status messages for group name changes.
-/// - %1$s will be replaced by the old group name
-/// - %2$s will be replaced by the new group name
-#define DC_STR_MSGGRPNAME                 15
-
-/// "Group image changed."
-///
-/// Used in status messages for group images changes.
-#define DC_STR_MSGGRPIMGCHANGED           16
-
-/// "Member %1$s added."
-///
-/// Used in status messages for added members.
-/// - %1$s will be replaced by the name of the added member
-#define DC_STR_MSGADDMEMBER               17
-
-/// "Member %1$s removed."
-///
-/// Used in status messages for removed members.
-/// - %1$s will be replaced by the name of the removed member
-#define DC_STR_MSGDELMEMBER               18
-
-/// "Group left."
-///
-/// Used in status messages.
-#define DC_STR_MSGGROUPLEFT               19
-
 /// "GIF"
 ///
 /// Used in summaries.
@@ -6029,9 +6000,7 @@ void dc_event_unref(dc_event_t* event);
 /// - %1$s will be replaced by the subject of the displayed message
 #define DC_STR_READRCPT_MAILBODY          32
 
-/// "Group image deleted."
-///
-/// Used in status messages for deleted group images.
+/// @deprecated Deprecated, this string is no longer needed.
 #define DC_STR_MSGGRPIMGDELETED           33
 
 /// "End-to-end encryption preferred."
@@ -6221,12 +6190,11 @@ void dc_event_unref(dc_event_t* event);
 
 /// "Chat protection enabled."
 ///
-/// Used in status messages.
+
+/// @deprecated Deprecated, replaced by DC_STR_MSG_YOU_ENABLED_PROTECTION and DC_STR_MSG_PROTECTION_ENABLED_BY.
 #define DC_STR_PROTECTION_ENABLED         88
 
-/// "Chat protection disabled."
-///
-/// Used in status messages.
+/// @deprecated Deprecated, replaced by DC_STR_MSG_YOU_DISABLED_PROTECTION and DC_STR_MSG_PROTECTION_DISABLED_BY.
 #define DC_STR_PROTECTION_DISABLED        89
 
 /// "Reply"
@@ -6248,29 +6216,37 @@ void dc_event_unref(dc_event_t* event);
 /// "Message deletion timer is set to %1$s minutes."
 ///
 /// Used in status messages.
-//
-/// `%1$s` will be replaced by the number of minutes (alwasy >1) the timer is set to.
+///
+/// `%1$s` will be replaced by the number of minutes (always >1) the timer is set to.
+///
+/// @deprecated Replaced by DC_STR_MSG_YOU_EPHEMERAL_TIMER_MINUTES and DC_STR_MSG_EPHEMERAL_TIMER_MINUTES_BY.
 #define DC_STR_EPHEMERAL_MINUTES          93
 
 /// "Message deletion timer is set to %1$s hours."
 ///
 /// Used in status messages.
-//
+///
 /// `%1$s` will be replaced by the number of hours (always >1) the timer is set to.
+///
+/// @deprecated Replaced by DC_STR_MSG_YOU_EPHEMERAL_TIMER_HOURS and DC_STR_MSG_EPHEMERAL_TIMER_HOURS_BY.
 #define DC_STR_EPHEMERAL_HOURS            94
 
 /// "Message deletion timer is set to %1$s days."
 ///
 /// Used in status messages.
-//
+///
 /// `%1$s` will be replaced by the number of days (always >1) the timer is set to.
+///
+/// @deprecated Replaced by DC_STR_MSG_YOU_EPHEMERAL_TIMER_DAYS and DC_STR_MSG_EPHEMERAL_TIMER_DAYS_BY.
 #define DC_STR_EPHEMERAL_DAYS             95
 
 /// "Message deletion timer is set to %1$s weeks."
 ///
 /// Used in status messages.
-//
+///
 /// `%1$s` will be replaced by the number of weeks (always >1) the timer is set to.
+///
+/// @deprecated Replaced by DC_STR_MSG_YOU_EPHEMERAL_TIMER_WEEKS and DC_STR_MSG_EPHEMERAL_TIMER_WEEKS_BY.
 #define DC_STR_EPHEMERAL_WEEKS            96
 
 /// "Forwarded"
@@ -6427,7 +6403,7 @@ void dc_event_unref(dc_event_t* event);
 /// Used as status in the connectivity view.
 #define DC_STR_NOT_CONNECTED              121
 
-/// %1$s changed their address from %2$s to %3$s"
+/// "%1$s changed their address from %2$s to %3$s"
 ///
 /// Used as an info message to chats with contacts that changed their address.
 #define DC_STR_AEAP_ADDR_CHANGED          122
@@ -6444,6 +6420,200 @@ void dc_event_unref(dc_event_t* event);
 ///
 /// Used in a device message that explains AEAP.
 #define DC_STR_AEAP_EXPLANATION_AND_LINK  123
+
+/// "You changed group name from \"%1$s\" to \"%2$s\"."
+#define DC_STR_MSG_YOU_CHANGED_GRP_NAME 124
+
+/// "Group name changed from \"%1$s\" to \"%2$s\" by %3$s."
+#define DC_STR_MSG_GRP_NAME_CHANGED_BY 125
+
+/// "You changed the group image."
+#define DC_STR_MSG_YOU_CHANGED_GRP_IMG 126
+
+/// "Group image changed by %1$s."
+#define DC_STR_MSG_GRP_IMG_CHANGED_BY 127
+
+/// "You added member %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_ADD_MEMBER 128
+
+/// "Member %1$s added by %2$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_ADD_MEMBER_BY 129
+
+/// "You removed member %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_DEL_MEMBER 130
+
+/// "Member %1$s removed by %2$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_DEL_MEMBER_BY 131
+
+/// "You left the group."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_LEFT_GROUP 132
+
+/// "Group left by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_GROUP_LEFT_BY 133
+
+/// "You deleted the group image."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_DELETED_GRP_IMG 134
+
+/// "Group image deleted by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_GRP_IMG_DELETED_BY 135
+
+/// "You enabled location streaming."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_ENABLED_LOCATION 136
+
+/// "Location streaming enabled by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_LOCATION_ENABELD_BY 137
+
+/// "You disabled message deletion timer."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_DISABLED_EPHEMERAL_TIMER 138
+
+/// "Message deletion timer is disabled by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_EPHEMERAL_TIMER_DISABLED_BY 139
+
+/// "You set message deletion timer to %1$s s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_ENABLED_EPHEMERAL_TIMER 140
+
+/// "Message deletion timer is set to %1$s s by %2$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_EPHEMERAL_TIMER_ENABLED_BY 141
+
+/// "You set message deletion timer to 1 minute."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIME_MINUTE 142
+
+/// "Message deletion timer is set to 1 minute by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_EPHEMERAL_TIMER_MINUTE_BY 143
+
+/// "You set message deletion timer to 1 hour."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_HOUR 144
+
+/// "Message deletion timer is set to 1 hour by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_EPHEMERAL_TIMER_HOUR_BY 145
+
+/// "You set message deletion timer to 1 day."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_DAY 146
+
+/// "Message deletion timer is set to 1 day by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_EPHEMERAL_TIMER_DAY_BY 147
+
+/// "You set message deletion timer to 1 week."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_WEEK 148
+
+/// "Message deletion timer is set to 1 week by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_EPHEMERAL_TIMER_WEEK_BY 149
+
+/// "You set message deletion timer to %1$s minutes."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of minutes (always >1) the timer is set to.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_MINUTES 150
+
+/// "Message deletion timer is set to %1$s minutes by %2$s."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of minutes (always >1) the timer is set to.
+#define DC_STR_MSG_EPHEMERAL_TIMER_MINUTES_BY 151
+
+/// "You set message deletion timer to %1$s hours."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of hours (always >1) the timer is set to.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_HOURS 152
+
+/// "Message deletion timer is set to %1$s hours by %2$s."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of hours (always >1) the timer is set to.
+#define DC_STR_MSG_EPHEMERAL_TIMER_HOURS_BY 153
+
+/// "You set message deletion timer to %1$s days."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of days (always >1) the timer is set to.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_DAYS 154
+
+/// "Message deletion timer is set to %1$s days by %2$s."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of days (always >1) the timer is set to.
+#define DC_STR_MSG_EPHEMERAL_TIMER_DAYS_BY 155
+
+/// "You set message deletion timer to %1$s weeks."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of weeks (always >1) the timer is set to.
+#define DC_STR_MSG_YOU_EPHEMERAL_TIMER_WEEKS 156
+
+/// "Message deletion timer is set to %1$s weeks by %2$s."
+///
+/// Used in status messages.
+///
+/// `%1$s` will be replaced by the number of weeks (always >1) the timer is set to.
+#define DC_STR_MSG_EPHEMERAL_TIMER_WEEKS_BY 157
+
+/// "You enabled chat protection."
+///
+/// Used in status messages.
+#define DC_STR_MSG_YOU_ENABLED_PROTECTION 158
+
+/// "Chat protection enabled by %1$s."
+///
+/// Used in status messages.
+#define DC_STR_MSG_PROTECTION_ENABLED_BY 159
+
+/// "You disabled chat protection."
+#define DC_STR_MSG_YOU_DISABLED_PROTECTION 160
+
+/// "Chat protection disabled by %1$s."
+#define DC_STR_MSG_PROTECTION_DISABLED_BY 161
 
 /**
  * @}
