@@ -4,6 +4,7 @@
 
 ### API-Changes
 - add `dc_chat_get_mailinglist_addr()` #3520
+- remove `dc_chat_get_info_json()` #3523
 
 ### Added
 
