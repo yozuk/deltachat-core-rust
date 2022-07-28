@@ -5,6 +5,7 @@
 ### Added
 
 ### Changes
+- `dc_get_chat_media()` can return media globally #3528
 
 ### Fixes
 
