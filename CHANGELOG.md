@@ -3,7 +3,6 @@
 ## Unreleased
 
 ### API-Changes
-- add `dc_chat_get_mailinglist_addr()` #3520
 - remove `dc_chat_get_info_json()` #3523
 
 ### Added
@@ -11,6 +10,12 @@
 ### Changes
 
 ### Fixes
+- improved error handling for account setup from qrcode #3474
+
+## 1.92.0
+
+### API-Changes
+- add `dc_chat_get_mailinglist_addr()` #3520
 
 
 ## 1.91.0
