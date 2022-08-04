@@ -24,7 +24,7 @@ pub enum Protocol {
     Imap = 2,
 }
 
-#[derive(Debug, Display, PartialEq, Copy, Clone, FromPrimitive, ToPrimitive)]
+#[derive(Debug, Display, PartialEq, Copy, Clone, FromPrimitive, ToPrimitive, Eq)]
 #[repr(u8)]
 pub enum Socket {
     Automatic = 0,
